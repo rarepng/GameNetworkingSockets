@@ -67,6 +67,9 @@
 
 #include "platform.h"
 
+
+#define VALVE_DISABLE_TRACELOGGING  //TODO
+
 #ifdef _WINDOWS
 
 	// NOTE - for compile consistency, we always include the windows headers, even if tracelogging is not enabled
@@ -77,16 +80,19 @@
 		#define WINVER 0x0601
 	//#endif
 
-	#define WIN32_LEAN_AND_MEAN
-	#define NOMINMAX
-	#include <windows.h>
-	//#include <ShlObj.h>
-	//#include <winsock2.h>
-	#include <winmeta.h>
+
+
 
 	#ifdef VALVE_DISABLE_TRACELOGGING
+		#include <windows.h>
 		#define IsTraceLoggingEnabled() false
 	#else
+		#define WIN32_LEAN_AND_MEAN
+		#define NOMINMAX
+		#include <windows.h>
+		//#include <ShlObj.h>
+		//#include <winsock2.h>
+		#include <winmeta.h>
 		#define IsTraceLoggingEnabled() true
 
 		#define EVNTAPI

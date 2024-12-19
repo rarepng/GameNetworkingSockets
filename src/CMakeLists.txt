@@ -1,11 +1,17 @@
+
 include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
 include(CheckSymbolExists)
 include(CMakePushCheckState)
 include(GNUInstallDirs)
-
 find_package(Protobuf REQUIRED)
 find_package(Threads REQUIRED)
+
+add_definitions(-DSTEAMNETWORKINGSOCKETS_STATIC_LINK=1)
+
+set(STEAMNETWORKINGSOCKETS_STATIC_LINK 1)
+
+
 
 set(GNS_COMMON_PROTOS
 	"common/steamnetworkingsockets_messages_certs.proto"
@@ -166,7 +172,12 @@ protobuf_generate_cpp(GNS_CLIENTLIB_PROTO_SRCS GNS_CLIENTLIB_PROTO_HDRS ${GNS_CL
 
 function(gns_set_target_protobuf_properties TGT )
 	target_link_libraries(${TGT} PUBLIC
-		protobuf::libprotobuf
+		protobuf                                     #TODO
+		protoc
+		ssl
+		crypto
+		upb
+		protobuf-lite
 		Threads::Threads
 		)
 endfunction()

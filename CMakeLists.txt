@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.9)
+cmake_minimum_required(VERSION 3.30)
 
 # If vcpkg present as submodule, bring in the toolchain
 if( EXISTS ${CMAKE_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake )
@@ -43,14 +43,14 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 endif()
 
 option(BUILD_STATIC_LIB "Build the static link version of the client library" ON)
-option(BUILD_SHARED_LIB "Build the shared library version of the client library" ON)
+option(BUILD_SHARED_LIB "Build the shared library version of the client library" OFF)
 option(BUILD_EXAMPLES "Build the included examples" OFF)
 option(BUILD_TESTS "Build crypto, pki and network connection tests" OFF)
 option(BUILD_TOOLS "Build cert management tool" OFF)
 option(LTO "Enable Link-Time Optimization" OFF)
 option(ENABLE_ICE "Enable support for NAT-punched P2P connections using ICE protocol.  Build native ICE client" ON)
 option(USE_STEAMWEBRTC "Build Google's WebRTC library to get ICE support for P2P" OFF)
-option(Protobuf_USE_STATIC_LIBS "Link with protobuf statically" OFF)
+option(Protobuf_USE_STATIC_LIBS "Link with protobuf statically" ON)
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 	option(MSVC_CRT_STATIC "Link the MSVC CRT statically" OFF)
 	configure_msvc_runtime()
@@ -76,25 +76,6 @@ if(LTO)
 	check_ipo_supported()
 endif()
 
-if (WIN32)
-	#
-	# Strip compiler flags which conflict with ones we explicitly set. If we don't
-	# do this, then we get a warning on every file we compile for the library.
-	#
-	string(REPLACE "/EHsc" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-	string(REPLACE "/GR" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-
-	if (USE_CRYPTO STREQUAL "BCrypt")
-		#
-		# Check whether BCrypt can be used with this SDK version
-		#
-		try_compile(BCRYPT_AVAILABLE "${CMAKE_CURRENT_BINARY_DIR}/tryCompile" SOURCES "${CMAKE_CURRENT_LIST_DIR}/cmake/tryCompileTestBCrypt.cpp" LINK_LIBRARIES bcrypt OUTPUT_VARIABLE BCRYPT_AVAILABILITY_TEST_MESSAGES)
-		if (NOT BCRYPT_AVAILABLE)
-			message(STATUS ${BCRYPT_AVAILABILITY_TEST_MESSAGES})
-			message(FATAL_ERROR "You're on Windows but BCrypt seems to be unavailable, you will need OpenSSL")
-		endif()
-	endif()
-endif()
 
 if (USE_CRYPTO STREQUAL "OpenSSL")
 	# Match the OpenSSL runtime to our setting.
@@ -202,7 +183,7 @@ function(set_target_common_gns_properties TGT)
 	endif()
 
 	set_target_properties(${TGT} PROPERTIES
-		CXX_STANDARD 11
+		CXX_STANDARD 20
 	)
 endfunction()
 
