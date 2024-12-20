@@ -2527,7 +2527,7 @@ static bool DrainSocket( CRawUDPSocketImpl *pSock )
 
 		#if PlatformSupportsRecvMsg() && PlatformSupportsRecvTOS()
 		{
-			cmsghdr* cmsg = WSA_CMSG_FIRSTHDR(&msg);
+			cmsghdr* cmsg = CMSG_FIRSTHDR(&msg);
 			if (cmsg)
 			{
 				if (unlikely(cmsg->cmsg_level != IPPROTO_IP || cmsg->cmsg_type != IP_TOS))
