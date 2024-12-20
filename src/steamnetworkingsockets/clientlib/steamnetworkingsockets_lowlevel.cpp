@@ -2560,6 +2560,8 @@ static bool DrainSocket( CRawUDPSocketImpl *pSock )
 
 			}
 		}
+		tos_done:
+		#endif
 		#endif
 		// If we're dual stack, convert mapped IPv4 back to ordinary IPv4
 		if ( pSock->m_nAddressFamilies == k_nAddressFamily_DualStack )
