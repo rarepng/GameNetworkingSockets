@@ -1109,7 +1109,7 @@ public:
 				wsaMsg.Control.buf = control;
 				memset( control, 0, sizeof(control) );
 
-				CMSGHDR *cmsg = WSA_CMSG_FIRSTHDR(&wsaMsg); //TODO
+				WSACMSGHDR *cmsg = WSA_CMSG_FIRSTHDR(&wsaMsg); //TODO
 				cmsg->cmsg_len = WSA_CMSG_LEN(sizeof(INT));
 				cmsg->cmsg_level = (destAddress.ss_family == AF_INET) ? IPPROTO_IP : IPPROTO_IPV6;
 				cmsg->cmsg_type = (destAddress.ss_family == AF_INET) ? IP_ECN : IPV6_ECN;
@@ -2485,7 +2485,7 @@ static bool DrainSocket( CRawUDPSocketImpl *pSock )
 
 		#if PlatformSupportsRecvMsg() && PlatformSupportsRecvTOS()
 		{
-			cmsghdr *cmsg = CMSG_FIRSTHDR( &msg );
+			_WSACMSGHDR *cmsg = WSA_CMSG_FIRSTHDR( &msg );
 			if ( cmsg )
 			{
 				if ( unlikely( cmsg->cmsg_level != IPPROTO_IP || cmsg->cmsg_type != IP_TOS ) )
@@ -2493,7 +2493,7 @@ static bool DrainSocket( CRawUDPSocketImpl *pSock )
 					AssertMsgOnce( false, "Extra control data returned besides TOS?  0x%x/0x%x", cmsg->cmsg_level, cmsg->cmsg_type );
 					do
 					{
-						cmsg = CMSG_NXTHDR( &msg, cmsg );
+						cmsg = WSA_CMSG_NXTHDR( &msg, cmsg );
 						if ( !cmsg )
 						{
 							AssertMsgOnce( false, "No control data returned even though we asked for TOS?" );
@@ -2503,14 +2503,14 @@ static bool DrainSocket( CRawUDPSocketImpl *pSock )
 				}
 
 				#ifdef _WIN32
-					AssertMsgOnce( cmsg->cmsg_len == sizeof(cmsghdr) + sizeof(int), "Unexpected IP_TOS cmsg_len %lld", (long long)cmsg->cmsg_len );
+					AssertMsgOnce( cmsg->cmsg_len == sizeof(_WSACMSGHDR) + sizeof(int), "Unexpected IP_TOS cmsg_len %lld", (long long)cmsg->cmsg_len );
 					info.m_tos = (uint8)*((int *) WSA_CMSG_DATA(cmsg));
 				#else
 					AssertMsgOnce( cmsg->cmsg_len == sizeof(cmsghdr) + sizeof(uint8), "Unexpected IP_TOS cmsg_len %lld", (long long)cmsg->cmsg_len );
 					info.m_tos = *((uint8 *) CMSG_DATA(cmsg));
 				#endif
 
-				cmsg = CMSG_NXTHDR( &msg, cmsg );
+				cmsg = WSA_CMSG_NXTHDR( &msg, cmsg );
 				if ( unlikely( cmsg != nullptr ) )
 				{
 					AssertMsgOnce( false, "Extra control data returned besides TOS?  0x%x/0x%x", cmsg->cmsg_level, cmsg->cmsg_type );
