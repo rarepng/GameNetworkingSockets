@@ -164,6 +164,7 @@ function(set_target_common_gns_properties TGT)
 			# Disable RTTI except in Debug, because we use dynamic_cast in assert_cast
 			target_compile_options(${TGT} PRIVATE $<IF:$<CONFIG:Debug>,/GR,/GR->)
 		else()
+		target_compile_definitions( ${TGT} PRIVATE WINDOWSRAW )
 			target_compile_definitions(${TGT} PRIVATE
 				__STDC_FORMAT_MACROS=1
 				__USE_MINGW_ANSI_STDIO=0

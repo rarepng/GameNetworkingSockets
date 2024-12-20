@@ -1108,8 +1108,11 @@ public:
 				wsaMsg.Control.len = sizeof(control);
 				wsaMsg.Control.buf = control;
 				memset( control, 0, sizeof(control) );
-
+				#ifdef WINDOWSRAW
 				WSACMSGHDR *cmsg = WSA_CMSG_FIRSTHDR(&wsaMsg); //TODO
+				#else
+				CMSGHDR* cmsg = WSA_CMSG_FIRSTHDR(&wsaMsg); //TODO
+				#endif
 				cmsg->cmsg_len = WSA_CMSG_LEN(sizeof(INT));
 				cmsg->cmsg_level = (destAddress.ss_family == AF_INET) ? IPPROTO_IP : IPPROTO_IPV6;
 				cmsg->cmsg_type = (destAddress.ss_family == AF_INET) ? IP_ECN : IPV6_ECN;
@@ -2480,8 +2483,8 @@ static bool DrainSocket( CRawUDPSocketImpl *pSock )
 		// and it should be this!
 		info.m_tos = 0xff;
 
-		//#define AAAAAAAAAAAAAAwindowscomp                  //TODO
-		#ifndef AAAAAAAAAAAAAAwindowscomp
+		//#define AAAAAAAAAAAWINDOWSRAW                  //TODO
+		#ifdef WINDOWSRAW
 
 		#if PlatformSupportsRecvMsg() && PlatformSupportsRecvTOS()
 		{
@@ -2520,6 +2523,43 @@ static bool DrainSocket( CRawUDPSocketImpl *pSock )
 		}
 		tos_done:
 		#endif
+		#else
+
+		#if PlatformSupportsRecvMsg() && PlatformSupportsRecvTOS()
+		{
+			cmsghdr* cmsg = WSA_CMSG_FIRSTHDR(&msg);
+			if (cmsg)
+			{
+				if (unlikely(cmsg->cmsg_level != IPPROTO_IP || cmsg->cmsg_type != IP_TOS))
+				{
+					AssertMsgOnce(false, "Extra control data returned besides TOS?  0x%x/0x%x", cmsg->cmsg_level, cmsg->cmsg_type);
+					do
+					{
+						cmsg = CMSG_NXTHDR(&msg, cmsg);
+						if (!cmsg)
+						{
+							AssertMsgOnce(false, "No control data returned even though we asked for TOS?");
+							goto tos_done;
+						}
+					} while (cmsg->cmsg_level != IPPROTO_IP || cmsg->cmsg_type != IP_TOS);
+				}
+
+		#ifdef _WIN32
+				AssertMsgOnce(cmsg->cmsg_len == sizeof(cmsghdr) + sizeof(int), "Unexpected IP_TOS cmsg_len %lld", (long long)cmsg->cmsg_len);
+				info.m_tos = (uint8) * ((int*)WSA_CMSG_DATA(cmsg));
+		#else
+				AssertMsgOnce(cmsg->cmsg_len == sizeof(cmsghdr) + sizeof(uint8), "Unexpected IP_TOS cmsg_len %lld", (long long)cmsg->cmsg_len);
+				info.m_tos = *((uint8*)CMSG_DATA(cmsg));
+		#endif
+
+				cmsg = CMSG_NXTHDR(&msg, cmsg);
+				if (unlikely(cmsg != nullptr))
+				{
+					AssertMsgOnce(false, "Extra control data returned besides TOS?  0x%x/0x%x", cmsg->cmsg_level, cmsg->cmsg_type);
+				}
+
+			}
+		}
 		#endif
 		// If we're dual stack, convert mapped IPv4 back to ordinary IPv4
 		if ( pSock->m_nAddressFamilies == k_nAddressFamily_DualStack )
